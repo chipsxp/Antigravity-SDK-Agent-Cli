@@ -17,6 +17,7 @@
 import asyncio
 import collections
 import dataclasses
+import importlib.metadata
 import importlib.resources
 import json
 import logging
@@ -1281,7 +1282,21 @@ def _get_default_binary_path() -> str:
   if env_path := os.environ.get("ANTIGRAVITY_HARNESS_PATH"):
     return env_path
 
-  # 3. Try importlib.resources (External Wheel)
+  # 2. Try importlib.metadata (Robust wheel discovery)
+  # This is immune to sys.path shadowing by a local repository directory.
+  try:
+    dist = importlib.metadata.distribution("google-antigravity")
+    if dist.files:
+      for f in dist.files:
+        normalized_path = str(f).replace("\\", "/")
+        if normalized_path.endswith("google/antigravity/bin/localharness"):
+          binary_path = os.path.abspath(str(f.locate()))
+          if os.path.exists(binary_path):
+            return binary_path
+  except (importlib.metadata.PackageNotFoundError, ValueError, AttributeError):
+    pass
+
+  # 3. Try importlib.resources (External Wheel fallback)
   try:
     # Using 'google.antigravity' as the package name.
     # This assumes the binary is located at google/antigravity/bin/localharness
@@ -1302,7 +1317,11 @@ def _get_default_binary_path() -> str:
 
   raise RuntimeError(
       "Could not find default localharness binary. "
-      "Please specify binary_path explicitly or ensure it is in your PATH."
+      "Please specify binary_path explicitly, set the "
+      "ANTIGRAVITY_HARNESS_PATH environment variable, or ensure it is in your "
+      "PATH. Note: If you are running from the root of the repository, the "
+      "local source tree might shadow your pip-installed package and prevent "
+      "resource discovery."
   )
 
 

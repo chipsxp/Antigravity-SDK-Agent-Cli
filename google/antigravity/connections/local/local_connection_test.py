@@ -16,6 +16,7 @@
 
 import asyncio
 import datetime
+import importlib
 import io
 import json
 import struct
@@ -1851,9 +1852,50 @@ class GetDefaultBinaryPathTest(unittest.TestCase):
 
   @mock.patch.dict("os.environ", {}, clear=True)
   @mock.patch.object(local_connection, "resources", None)
+  @mock.patch("importlib.metadata.distribution")
+  @mock.patch("os.path.exists")
+  def test_returns_metadata_distribution_path(self, mock_exists, mock_dist):
+    mock_file = mock.MagicMock()
+    mock_file.__str__.return_value = "google/antigravity/bin/localharness"
+    mock_file.locate.return_value = (
+        "/site-packages/google/antigravity/bin/localharness"
+    )
+
+    mock_distribution = mock.MagicMock()
+    mock_distribution.files = [mock_file]
+    mock_dist.return_value = mock_distribution
+    mock_exists.return_value = True
+
+    path = local_connection._get_default_binary_path()
+    self.assertEqual(path, "/site-packages/google/antigravity/bin/localharness")
+    mock_dist.assert_called_once_with("google-antigravity")
+    mock_file.locate.assert_called_once()
+
+  @mock.patch.dict("os.environ", {}, clear=True)
+  @mock.patch("importlib.metadata.distribution")
+  def test_returns_internal_pyglib_resource_path(self, mock_dist):
+    mock_resources = mock.MagicMock()
+    mock_resources.GetResourceFilename.return_value = (
+        "/g3/runfiles/localharness"
+    )
+
+    with mock.patch.object(local_connection, "resources", mock_resources):
+      path = local_connection._get_default_binary_path()
+      self.assertEqual(path, "/g3/runfiles/localharness")
+      mock_resources.GetResourceFilename.assert_called_once_with(
+          "antigravity_harness"
+      )
+      mock_dist.assert_not_called()
+
+  @mock.patch.dict("os.environ", {}, clear=True)
+  @mock.patch.object(local_connection, "resources", None)
+  @mock.patch("importlib.metadata.distribution")
   @mock.patch("importlib.resources.files")
   @mock.patch("os.path.exists")
-  def test_returns_external_wheel_path(self, mock_exists, mock_files):
+  def test_returns_external_wheel_path(
+      self, mock_exists, mock_files, mock_dist
+  ):
+    mock_dist.side_effect = importlib.metadata.PackageNotFoundError
     mock_path = mock.MagicMock()
     mock_path.joinpath.return_value.__str__.return_value = "/wheel/path"
     mock_files.return_value = mock_path
@@ -1864,9 +1906,11 @@ class GetDefaultBinaryPathTest(unittest.TestCase):
 
   @mock.patch.dict("os.environ", {}, clear=True)
   @mock.patch.object(local_connection, "resources", None)
+  @mock.patch("importlib.metadata.distribution")
   @mock.patch("importlib.resources.files")
   @mock.patch("shutil.which")
-  def test_returns_system_path(self, mock_which, mock_files):
+  def test_returns_system_path(self, mock_which, mock_files, mock_dist):
+    mock_dist.side_effect = importlib.metadata.PackageNotFoundError
     mock_files.side_effect = ImportError
     mock_which.return_value = "/system/path"
 
@@ -1876,9 +1920,11 @@ class GetDefaultBinaryPathTest(unittest.TestCase):
 
   @mock.patch.dict("os.environ", {}, clear=True)
   @mock.patch.object(local_connection, "resources", None)
+  @mock.patch("importlib.metadata.distribution")
   @mock.patch("importlib.resources.files")
   @mock.patch("shutil.which")
-  def test_raises_when_not_found(self, mock_which, mock_files):
+  def test_raises_when_not_found(self, mock_which, mock_files, mock_dist):
+    mock_dist.side_effect = importlib.metadata.PackageNotFoundError
     mock_files.side_effect = ImportError
     mock_which.return_value = None
 
