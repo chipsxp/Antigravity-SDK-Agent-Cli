@@ -8,7 +8,16 @@ async def run_mcp_test():
     # Parameters to connect to your local MCP server
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "--env-file", ".env", "python", "-m", "app.mcp_server"],
+        args=[
+            "--directory",
+            "C:/Users/Grah/ChipsXP/Git-Repo/antigravity-sdk-python/ai-researcher",
+            "run",
+            "--env-file",
+            ".env",
+            "python",
+            "-m",
+            "app.mcp_server"
+        ],
         env=None
     )
 

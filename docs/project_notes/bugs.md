@@ -17,3 +17,9 @@
 - **Root Cause**: Interactive Python functions like `input()` and standard `print()` statements output directly to `sys.stdout`. Since the MCP protocol uses standard I/O to communicate JSON-RPC, these statements corrupt the stream.
 - **Solution**: Replaced `input()` with environment variable fallbacks (`os.environ.get`) and redirected all prints to `sys.stderr` (`print(..., file=sys.stderr)`).
 - **Prevention**: When building MCP servers, standard output is strictly reserved for JSON-RPC messages. Do not use interactive console blocking tools.
+
+### 2026-06-27 - MCP Server JSON Config & Python Module Execution
+- **Issue**: Attempting to run the MCP server via `uv` in `mcp.json` produced three sequential errors: `No environment file found at C:UsersGrah...` (stripped slashes), `ModuleNotFoundError: No module named 'mcp'`, and `ImportError: attempted relative import with no known parent package`.
+- **Root Cause**: (1) Single backslashes in JSON were stripped as invalid escape characters. (2) `uv` was executed outside the project directory so it couldn't find the `.venv`. (3) `mcp_server.py` was executed as a file path instead of a module, breaking relative imports like `from .agent import app`.
+- **Solution**: Reconfigured the MCP JSON block to use `--directory` with forward slashes (e.g., `C:/absolute/path/to/ai-researcher`), rely on the relative `.env`, and execute the server using `python -m app.mcp_server`.
+- **Prevention**: Always use forward slashes for paths in JSON configs. When launching Python modules with relative imports via `uv`, always use `--directory` to set context and `-m` with dot-notation to maintain package hierarchy.

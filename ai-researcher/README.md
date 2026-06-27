@@ -55,15 +55,15 @@ To expose the AI Researcher directly inside your Antigravity IDE (or Claude Desk
     "ai-researcher": {
       "command": "uv",
       "args": [
+        "--directory",
+        "C:/absolute/path/to/ai-researcher",
         "run",
         "--env-file",
-        "C:\\absolute\\path\\to\\ai-researcher\\.env",
+        ".env",
         "python",
-        "C:\\absolute\\path\\to\\ai-researcher\\app\\mcp_server.py"
-      ],
-      "env": {
-        "PYTHONPATH": "C:\\absolute\\path\\to\\ai-researcher"
-      }
+        "-m",
+        "app.mcp_server"
+      ]
     }
   }
 }
