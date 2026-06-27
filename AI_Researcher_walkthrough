@@ -1,0 +1,64 @@
+# AI Researcher Deep Agent - Implementation Walkthrough
+
+We have successfully completed the foundational implementation of your AI Document Library Researcher based on your architecture diagram and plan.
+
+## Architecture & Directory Structure
+
+All code is neatly organized under the `ai_researcher` directory:
+
+```plaintext
+ai_researcher/
+├── data/                  # Sample markdown library (e.g. sample_framework.md)
+├── ingestion.py           # Parses and embeds markdown files
+├── graph_store.py         # Interfaces with Neo4j to store vectors and graphs
+├── retrieval.py           # Provides Graph RAG and Semantic Vector search
+├── memory.py              # Interfaces with Zep (Community Graphity)
+├── agent.py               # Assembles the Google Antigravity Agent & Tools
+└── mcp_server.py          # Exposes Agent capabilities via FastMCP
+```
+
+## Phase Highlights
+
+### 1. Document Ingestion Pipeline ([ingestion.py](file:///C:/Users/Grah/ChipsXP/Git-Repo/antigravity-sdk-python/ai_researcher/ingestion.py))
+- Implemented a markdown chunker.
+- Uses `google.generativeai` text embeddings (`text-embedding-004`).
+- Converts raw markdown into `DocumentChunk` objects ready for storage.
+
+### 2. Neo4j Graph RAG Setup ([graph_store.py](file:///C:/Users/Grah/ChipsXP/Git-Repo/antigravity-sdk-python/ai_researcher/graph_store.py) & [retrieval.py](file:///C:/Users/Grah/ChipsXP/Git-Repo/antigravity-sdk-python/ai_researcher/retrieval.py))
+- Uses the `neo4j` Python driver.
+- Configures a vector index for semantic retrieval.
+- Organizes data relationally: `(Document) -[:HAS_CHUNK]-> (Chunk)`.
+- The `RetrievalEngine` fetches the closest semantic vector and also traverses the graph to pull adjacent document chunks for maximum context.
+
+### 3. Zep Memory Layer ([memory.py](file:///C:/Users/Grah/ChipsXP/Git-Repo/antigravity-sdk-python/ai_researcher/memory.py))
+- Configured a `ZepMemoryStore` interface.
+- Tracks agent actions and records "experiences" with success/failure validation.
+- Ready to be swapped with the official `ZepClient` once the server is available.
+
+### 4. Agent Orchestration ([agent.py](file:///C:/Users/Grah/ChipsXP/Git-Repo/antigravity-sdk-python/ai_researcher/agent.py))
+- Uses the `Agent` class from the `google.antigravity` SDK.
+- The agent is equipped with three tools:
+  - `query_library_framework`: Connects to Neo4j Graph RAG.
+  - `recall_past_experience`: Searches Zep memory.
+  - `record_solution_outcome`: Writes results to Zep.
+
+### 5. MCP Integration ([mcp_server.py](file:///C:/Users/Grah/ChipsXP/Git-Repo/antigravity-sdk-python/ai_researcher/mcp_server.py))
+- Wraps the agent using `FastMCP`.
+- Exposes two MCP tools: `ask_researcher` and `trigger_ingestion`.
+- Ready to be connected to the Antigravity Coding Harness or Claude Desktop.
+
+## Next Steps for You
+
+> [!IMPORTANT]
+> **API Keys and Dependencies:** Since you mentioned acquiring keys later, the code relies on environment variables:
+> - `GEMINI_API_KEY`: For embeddings and the Antigravity Agent model.
+> - `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`: For the Neo4j instance.
+> - `ZEP_API_URL`, `ZEP_API_KEY`: For the Zep server.
+
+1. Create a `requirements.txt` file and install dependencies:
+   ```bash
+   pip install google-generativeai neo4j mcp zep-python
+   ```
+2. Export your API keys in your terminal or use a `.env` file.
+3. Add your actual framework markdown files into the `ai_researcher/data/` folder.
+4. Run `python ai_researcher/mcp_server.py` to start the server!

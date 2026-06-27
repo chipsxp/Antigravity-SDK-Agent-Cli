@@ -5,6 +5,28 @@ Antigravity and Gemini. It provides a secure, scalable, and stateful
 infrastructure layer that abstracts the agentic loop, letting you focus on what
 your agent *does* rather than how it runs.
 
+---
+
+## 🚀 Featured Showcase: AI Document Researcher
+
+This repository also houses the **AI Document Researcher**, a fully local Model Context Protocol (MCP) server built with the Google Agent Development Kit (ADK) and `agents-cli`. 
+
+The AI Researcher acts as an autonomous coding assistant that ingests your local Markdown and Txt documentation into a temporal knowledge graph. It leverages Gemini to answer structural and architectural questions based purely on your local SDK and framework docs!
+
+### Tech Stack
+- **Agent Framework:** Google ADK & `agents-cli`
+- **MCP Server:** `mcp.server.fastmcp` (FastMCP)
+- **Knowledge Graph:** Neo4j (Local)
+- **Episodic Memory:** Zep Graphiti
+- **LLM Engine:** Google Gemini Flash (`google-genai`)
+
+### Ongoing Development
+We are currently devising a way for the Agent Code Editor to recall the AI Researcher repetitively via an automated hook or prompt. This will allow the AI Researcher to autonomously validate new code and structural changes against ingested documentation and past Zep Graphiti experiences without manual intervention.
+
+**👉 [Read the AI Researcher Quick Start Guide Here](ai-researcher/README.md)**
+
+---
+
 ## Installation
 
 ```sh

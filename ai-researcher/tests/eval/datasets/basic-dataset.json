@@ -1,0 +1,18 @@
+{
+  "eval_cases": [
+    {
+      "eval_case_id": "greeting",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Hello, what can you help me with?"}]
+      }
+    },
+    {
+      "eval_case_id": "framework_query",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "I am trying to use FastMCP to build a server. How do I expose a tool?"}]
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+flowchart TD
+    %% Input and Main Agent
+    JSON_Input[JSON Input] --> Agent[AI RESEARCHER\nAGY SDK AGENT]
+    
+    %% MCP Connection (Exposed as Server)
+    Agent -- MCP Server --> Harness[AI CODING HARNESS\nAGY / CLAUDE SDK]
+    
+    %% Top Node (Zep Memory)
+    Agent --> Zep[ZEP COMMUNITY\nGRAPHITY MEMORY]
+    
+    %% Embedder and Vector Store Flow
+    Agent --> Embedder[EMBEDDER]
+    Embedder --> Agent
+    Embedder --> VectorStore[VECTOR STORE\nLLM.TXT\nLLM-FULL.TXT]
+    VectorStore --> Agent
+    
+    %% Graph RAG Node
+    Agent <--> GraphRAG[GRAPH RAG\nLIGHT RAG /\nNEO4J]
