@@ -37,7 +37,7 @@ async def ask_researcher(query: str) -> str:
         return f"The AI Researcher encountered an error processing your query: {e}"
 
 @mcp.tool()
-def trigger_ingestion() -> str:
+async def trigger_ingestion() -> str:
     """
     Triggers the AI Researcher to re-ingest markdown documents from the data directory into its Neo4j graph.
     """
@@ -47,7 +47,7 @@ def trigger_ingestion() -> str:
         
         data_dir = get_library_path()
         pipeline = IngestionPipeline(data_dir=data_dir)
-        chunks = pipeline.process_all()
+        chunks = await pipeline.process_all()
         
         return f"Successfully ingested {len(chunks)} chunks into Neo4j and Zep memory."
     except Exception as e:

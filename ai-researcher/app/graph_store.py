@@ -1,3 +1,9 @@
+import sys, builtins
+__print = builtins.print
+def print(*args, **kwargs):
+    kwargs['file'] = sys.stderr
+    __print(*args, **kwargs)
+
 import os
 import asyncio
 from typing import List, Dict, Any
@@ -51,20 +57,37 @@ class GraphitiStore:
         except Exception as e:
             print(f"Schema setup warning: {e}")
 
-    def store_chunks(self, chunks: List[DocumentChunk]):
-        """Stores document chunks via Graphiti's episode/memory tracking."""
+    async def store_chunks(self, chunks: List[DocumentChunk]):
+        """Stores document chunks via Graphiti's episode tracking."""
         if not self.client:
             print(f"[MOCK] Storing {len(chunks)} chunks in Graphiti...")
             return
             
         print(f"Storing {len(chunks)} chunks into Graphiti...")
-        # Pseudo-code for Graphiti memory ingestion
-        # for chunk in chunks:
-        #    self.client.add_episode(
-        #        name="document_ingestion",
-        #        source=chunk.metadata["source"],
-        #        fact=chunk.content
-        #    )
+        from graphiti_core.nodes import EpisodeType
+        import datetime
+        from datetime import timezone
+        
+        sem = asyncio.Semaphore(5)
+        
+        async def process_chunk(chunk):
+            async with sem:
+                source_name = chunk.metadata.get("source", "unknown")
+                chunk_index = chunk.metadata.get("chunk_index", 0)
+                try:
+                    await self.client.add_episode(
+                        name=f"doc_{source_name}_{chunk_index}",
+                        episode_body=chunk.content,
+                        source=EpisodeType.message,
+                        reference_time=datetime.datetime.now(timezone.utc),
+                        source_description=f"Ingested from {source_name}"
+                    )
+                except Exception as e:
+                    print(f"Error storing chunk {source_name}_{chunk_index}: {e}")
+
+        tasks = [process_chunk(chunk) for chunk in chunks if chunk.content.strip()]
+        if tasks:
+            await asyncio.gather(*tasks)
 
     def close(self):
         if self.client and hasattr(self.client, 'close'):

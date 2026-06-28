@@ -1,6 +1,12 @@
 # ruff: noqa
 # Copyright 2026 Google LLC
 
+import sys, builtins
+__print = builtins.print
+def print(*args, **kwargs):
+    kwargs['file'] = sys.stderr
+    __print(*args, **kwargs)
+
 import os
 import google.auth
 
@@ -52,13 +58,13 @@ def recall_past_experience(scenario: str) -> str:
     formatted = [f"Past experience: {r.get('content')} (Metadata: {r.get('metadata')})" for r in results]
     return "\n\n".join(formatted)
 
-def record_solution_outcome(scenario: str, solution: str, successful: bool) -> str:
+async def record_solution_outcome(scenario: str, solution: str, successful: bool) -> str:
     """
     Records an experience into the Zep memory store for future Graphiti validation.
     Use this tool after you provide a solution to track its outcome.
     """
     if not memory_store: return "Database connection error."
-    memory_store.record_experience(scenario, solution, successful)
+    await memory_store.record_experience(scenario, solution, successful)
     return "Successfully recorded experience to memory."
 
 

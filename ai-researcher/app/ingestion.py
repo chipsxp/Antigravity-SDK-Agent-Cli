@@ -1,3 +1,9 @@
+import sys, builtins
+__print = builtins.print
+def print(*args, **kwargs):
+    kwargs['file'] = sys.stderr
+    __print(*args, **kwargs)
+
 import os
 import glob
 from typing import List, Dict, Any
@@ -73,27 +79,8 @@ class IngestionPipeline:
                 
         return all_chunks
         
-    def generate_embeddings(self, chunks: List[DocumentChunk]) -> List[DocumentChunk]:
-        """Generates embeddings for a list of document chunks."""
-        # For simplicity, we embed one by one. In production, we'd batch this.
-        for chunk in chunks:
-            if not chunk.content.strip():
-                continue
-            
-            try:
-                result = genai.embed_content(
-                    model=self.embedding_model,
-                    content=chunk.content,
-                    task_type="retrieval_document"
-                )
-                chunk.embedding = result["embedding"]
-            except Exception as e:
-                print(f"Error embedding chunk {chunk.metadata}: {e}")
-                
-        return chunks
-
-    def process_all(self) -> List[DocumentChunk]:
-        """Runs the full ingestion and embedding pipeline."""
+    async def process_all(self) -> List[DocumentChunk]:
+        """Runs the full ingestion and embedding pipeline using Graphiti."""
         print(f"Loading documents from {self.data_dir}...")
         chunks = self.load_documents()
         
@@ -101,23 +88,19 @@ class IngestionPipeline:
             print("No documents found to ingest.")
             return []
             
-        print(f"Loaded {len(chunks)} chunks. Generating embeddings...")
-        embedded_chunks = self.generate_embeddings(chunks)
-        print("Embeddings generated.")
-        
+        print(f"Loaded {len(chunks)} chunks. Storing chunks directly into Neo4j Graph Store (Graphiti handles extraction and embedding)...")
         if self.graph_store:
-            print("Storing chunks in Neo4j Graph Store...")
-            self.graph_store.store_chunks(embedded_chunks)
+            await self.graph_store.store_chunks(chunks)
             
         if self.memory_store:
             print("Recording ingestion event in memory...")
-            self.memory_store.add_memory(
+            await self.memory_store.add_memory(
                 user_input=f"Ingest documents from {self.data_dir}",
-                agent_response=f"Successfully ingested {len(embedded_chunks)} chunks.",
-                metadata={"type": "ingestion_event", "chunk_count": len(embedded_chunks)}
+                agent_response=f"Successfully ingested {len(chunks)} chunks.",
+                metadata={"type": "ingestion_event", "chunk_count": len(chunks)}
             )
             
-        return embedded_chunks
+        return chunks
 
 def get_library_path() -> str:
     current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -139,7 +122,8 @@ if __name__ == "__main__":
         print(f"Created library directory at {data_dir}. Please place markdown files there.")
         
     pipeline = IngestionPipeline(data_dir=data_dir)
-    chunks = pipeline.process_all()
+    import asyncio
+    chunks = asyncio.run(pipeline.process_all())
     
     for c in chunks:
-        print(f"Chunk from {c.metadata['source']} (length: {len(c.content)}): Embedding size {len(c.embedding) if c.embedding else 0}")
+        print(f"Chunk from {c.metadata['source']} (length: {len(c.content)})")
